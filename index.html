@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>DMP — 욕망 해소 자금 산출 워크시트</title>
- <style>
+<style>
   /* Theme */
   :root{
     --bg:#0b1020; --card:#131a33; --muted:#9fb0ff; --text:#e9edff;
@@ -13,31 +13,34 @@
   *{ box-sizing:border-box; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',Arial,sans-serif; }
   body{ margin:0; background:linear-gradient(180deg,#0b1020,#0b1020 50%,#0f1530); color:var(--text); }
 
-  /* Layout */
+  /* Wrapper & cards */
   .wrap{ max-width:980px; margin:40px auto; padding:0 16px; }
   .title{ font-size:28px; font-weight:800; letter-spacing:-.3px; margin-bottom:4px; }
   .subtitle{ color:var(--muted); margin-bottom:24px; }
-
   .card{
     background:var(--card); border:1px solid var(--border);
     border-radius:16px; padding:20px; margin-bottom:18px;
     box-shadow:0 8px 24px rgba(0,0,0,.25);
   }
 
-  /* Two-column groups inside a card */
-  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  /* ▶ 섹션 내부 두 열: 열 사이 간격을 크게 (만원 ↔ 다음 라벨이 붙지 않도록) */
+  .grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    column-gap:32px;           /* 기존보다 넓힘 */
+    row-gap:12px;
+  }
 
-  /* One row = label | input | unit  (tight spacing) */
+  /* ▶ 각 행을 3칸 그리드(라벨 | 입력 | 단위)로: 라벨-입력 간격 촘촘 */
   .row{
     display:grid;
-    grid-template-columns:minmax(0,1fr) auto auto; /* label | input | unit */
+    grid-template-columns:minmax(120px,1fr) auto auto; /* label | input | unit */
     align-items:center;
-    column-gap:10px;          /* label–input 간격 */
+    column-gap:6px;            /* 라벨↔입력 간격 축소 */
     margin:8px 0;
   }
 
   label{ color:#c9d4ff; font-size:14px; }
-
   input[type="number"]{
     width:150px; padding:8px 10px;
     border-radius:10px; border:1px solid var(--border);
@@ -45,10 +48,13 @@
   }
   input::placeholder{ color:#93a3ff; opacity:.6; }
 
-  /* Unit right next to input */
+  /* ▶ 단위: 입력칸과는 가깝게, 다음 열과는 grid gap으로 분리 */
   .k{
     width:auto; min-width:max-content;
-    text-align:left; margin-left:4px; opacity:.95;
+    text-align:left;
+    margin-left:4px;           /* 입력↔단위 약간의 여백 */
+    white-space:nowrap;        /* '만원/월' 줄바꿈 방지 */
+    opacity:.95;
   }
 
   .hint{ color:#92a1ff; font-size:12px; }
@@ -83,12 +89,13 @@
 
   /* Mobile */
   @media (max-width:760px){
-    .grid{ grid-template-columns:1fr; gap:12px; }
-    .row{ column-gap:8px; }
+    .grid{ grid-template-columns:1fr; column-gap:0; row-gap:10px; }
+    .row{ column-gap:6px; }
     input[type="number"]{ width:120px; }
     .k{ margin-left:2px; }
   }
 </style>
+
 
 </head>
 <body>
