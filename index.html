@@ -294,7 +294,7 @@
       calc();
     });
 
-  $('exportCsv').addEventListener('click', () => {
+   $('exportCsv').addEventListener('click', () => {
     const rows = [
       ['항목','값(만원/또는 단위)'],
       ['세후 소득', $('income').value],
@@ -315,18 +315,31 @@
       ['최종 F2S(월)', $('finalF2S').value],
     ];
 
-    // CSV 문자열 (윈도우 엑셀 호환을 위한 CRLF 줄바꿈)
-    const csv = rows
-      .map(r => r.map(x => `"${String(x).replace(/"/g,'""')}"`).join(','))
-      .join('\r\n');
+    // 1) 탭으로 구분한 문자열 (CRLF 줄바꿈 권장)
+    const tsv = rows.map(r => r.join('\t')).join('\r\n');
 
-    // ★ 핵심: UTF-8 BOM 추가
-    const BOM = '\uFEFF';
-    const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+    // 2) UTF-16LE 인코딩 (BOM 포함)
+    function toUTF16LEWithBOM(str){
+      const bom = new Uint8Array([0xFF, 0xFE]); // UTF-16LE BOM
+      const buf = new Uint8Array(str.length * 2);
+      for (let i = 0; i < str.length; i++) {
+        const code = str.charCodeAt(i);
+        buf[i*2]   = code & 0xFF;       // low byte
+        buf[i*2+1] = (code >> 8) & 0xFF; // high byte
+      }
+      // BOM + data 결합
+      const out = new Uint8Array(bom.length + buf.length);
+      out.set(bom, 0);
+      out.set(buf, bom.length);
+      return out;
+    }
+
+    const bytes = toUTF16LEWithBOM(tsv);
+    const blob = new Blob([bytes], { type: 'text/tab-separated-values;charset=utf-16le;' });
 
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'dmp_f2s_worksheet.csv';
+    a.download = 'dmp_f2s_worksheet.tsv';
     a.click();
     URL.revokeObjectURL(a.href);
   });
