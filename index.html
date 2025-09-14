@@ -196,172 +196,128 @@
     <div class="footer">© DMP — Default Money Plan. 이 도구는 정보 제공 목적이며, 개인 상황에 따라 결과가 달라질 수 있습니다.</div>
   </div>
 
-  <script>
-    // ===== 유틸 =====
-    const $  = (id) => document.getElementById(id);
-    const num = (v) => (isFinite(parseFloat(v)) ? parseFloat(v) : 0);
-    const round1 = (v) => (Math.round((v ?? 0) * 10) / 10).toFixed(1);
-    const clamp  = (v, min, max) => Math.max(min, Math.min(max, v));
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const n = (v) => (isFinite(parseFloat(v)) ? parseFloat(v) : 0);
+  const r1 = (v) => (Math.round((v ?? 0) * 10) / 10).toFixed(1);
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+  const has = (id) => !!$(id);
 
-    const INPUT_IDS = [
+  // 1단계 계산
+  function calcStep1() {
+    const income = n($('income')?.value);
+
+    const must =
+      n($('rent')?.value) +
+      n($('transport')?.value) +
+      n($('food')?.value) +
+      n($('telIns')?.value) +
+      n($('others')?.value);
+
+    const safety =
+      n($('emFund')?.value) +
+      n($('debtPay')?.value) +
+      n($('futureSav')?.value);
+
+    if (has('mustSum')) $('mustSum').value = r1(must);
+    if (has('safetySum')) $('safetySum').value = r1(safety);
+    if (has('flowF2S')) $('flowF2S').value = r1(income - must - safety);
+
+    return { income, must, safety, flow: income - must - safety };
+  }
+
+  // 2단계 계산(있을 때만)
+  function calcStep2(must) {
+    if (!has('cashAssets')) return { bsAdj: 0, final: null };
+
+    const cashAssets = n($('cashAssets')?.value);
+    const emMonths = clamp(n($('emMonths')?.value ?? 6), 3, 12);
+    if (has('emMonths')) $('emMonths').value = emMonths;
+
+    const needEmergency = must * emMonths;
+    if (has('needEmergency')) $('needEmergency').value = r1(needEmergency);
+
+    const excess = Math.max(0, cashAssets - needEmergency);
+    if (has('excessCash')) $('excessCash').value = r1(excess);
+
+    const cashRate = clamp(n($('cashRate')?.value ?? 50), 0, 100);
+    if (has('cashRate')) $('cashRate').value = cashRate;
+    const spreadMonths = clamp(n($('spreadMonths')?.value ?? 12), 6, 24);
+    if (has('spreadMonths')) $('spreadMonths').value = spreadMonths;
+
+    const cashAdj = (excess * (cashRate / 100)) / (spreadMonths || 1);
+    if (has('cashAdj')) $('cashAdj').value = r1(cashAdj);
+
+    const preserveMature = n($('preserveMature')?.value);
+    const preserveRate = clamp(n($('preserveRate')?.value ?? 25), 0, 100);
+    if (has('preserveRate')) $('preserveRate').value = preserveRate;
+    const preserveSpread = clamp(n($('preserveSpread')?.value ?? 6), 3, 24);
+    if (has('preserveSpread')) $('preserveSpread').value = preserveSpread;
+
+    const preserveAdj =
+      (preserveMature * (preserveRate / 100)) / (preserveSpread || 1);
+    if (has('preserveAdj')) $('preserveAdj').value = r1(preserveAdj);
+
+    // 부채 보정 입력칸이 없어도 0으로 처리
+    const debtDelta = n($('debtDelta')?.value ?? 0);
+
+    const bsAdj = cashAdj + preserveAdj - Math.max(0, debtDelta) + Math.min(0, debtDelta);
+    if (has('bsAdj')) $('bsAdj').value = r1(bsAdj);
+
+    return { bsAdj };
+  }
+
+  function calcAll() {
+    const s1 = calcStep1();
+    const s2 = calcStep2(s1.must);
+    if (has('finalF2S')) $('finalF2S').value = r1((s1.flow ?? 0) + (s2.bsAdj ?? 0));
+
+    // 안내 문구(선택)
+    if ($('message')) {
+      const msg = [];
+      if (has('excessCash') && n($('excessCash').value) <= 0)
+        msg.push('현금성 자산이 비상자금 목표에 미달하여 현금성 보정 가산이 없습니다.');
+      if (has('preserveAdj') && n($('preserveAdj').value) > 0)
+        msg.push('보존성 만기금 일부를 기간에 나눠 반영 중입니다.');
+      $('message').textContent = msg.join(' ') || '계산이 완료되었습니다.';
+    }
+  }
+
+  // 초기 예제값 주입(빈 칸일 때만)
+  function setDefaults() {
+    const defaults = {
+      // 1단계
+      income: 280, rent: 70, transport: 15, food: 50, telIns: 20, others: 25,
+      emFund: 30, debtPay: 25, futureSav: 40,
+      // 2단계(있으면)
+      cashAssets: 800, emMonths: 6, cashRate: 50, spreadMonths: 12,
+      preserveMature: 0, preserveRate: 25, preserveSpread: 6,
+      debtDelta: 0
+    };
+    Object.entries(defaults).forEach(([id, val]) => {
+      if ($(id) && ($(id).value === '' || $(id).value == null)) $(id).value = val;
+    });
+  }
+
+  // 입력 감지 → 실시간 계산
+  function wireInputs() {
+    const ids = [
       'income','rent','transport','food','telIns','others',
       'emFund','debtPay','futureSav',
       'cashAssets','emMonths','cashRate','spreadMonths',
-      'preserveMature','preserveRate','preserveSpread'
-      // 'debtDelta' 입력칸이 없어도 동작하도록 calc에서 0으로 처리
+      'preserveMature','preserveRate','preserveSpread','debtDelta'
     ];
-    const ADVISOR_IDS = ['earmark','incomeStability','maturitySoon','penaltyRisk','bigExpense'];
-    const RESULT_IDS  = ['mustSum','safetySum','flowF2S','needEmergency','excessCash','cashAdj','preserveAdj','bsAdj','finalF2S','suggestedRate'];
+    ids.forEach(id => $(id)?.addEventListener('input', calcAll));
+  }
 
-    const DEFAULTS = {
-      income:280, rent:70, transport:15, food:50, telIns:20, others:25,
-      emFund:30, debtPay:25, futureSav:0,
-      cashAssets:800, emMonths:6, cashRate:50, spreadMonths:12,
-      preserveMature:0, preserveRate:25, preserveSpread:6,
-      earmark:false, incomeStability:'normal', maturitySoon:false, penaltyRisk:'none', bigExpense:false
-    };
+  window.addEventListener('DOMContentLoaded', () => {
+    setDefaults();
+    wireInputs();
+    calcAll(); // 처음에도 결과칸 채우기
+  });
+})();
+</script>
 
-    function suggestPreserveRate(mustSum, cashAssets){
-      let rate = 25;
-      const coverage = mustSum > 0 ? cashAssets / mustSum : 0;
-      if ($('earmark').checked) rate -= 15;
-      if (coverage < 3) rate -= 10; else if (coverage >= 6) rate += 10;
-      const st = $('incomeStability').value;
-      if (st === 'stable') rate += 5; else if (st === 'volatile') rate -= 10;
-      if ($('maturitySoon').checked) rate += 5;
-      const risk = $('penaltyRisk').value;
-      if (risk === 'some') rate -= 5; else if (risk === 'high') rate -= 12;
-      if ($('bigExpense').checked) rate -= 5;
-      rate = Math.round(clamp(rate, 0, 50));
-      $('suggestedRate').value = rate.toString();
-      return rate;
-    }
-
-    function calc(){
-      const g = (id, def = 0) => num(($(id)?.value) ?? def);
-
-      // 1단계
-      const income  = g('income');
-      const mustSum = g('rent') + g('transport') + g('food') + g('telIns') + g('others');
-      $('mustSum').value = round1(mustSum);
-
-      const safetySum = g('emFund') + g('debtPay') + g('futureSav');
-      $('safetySum').value = round1(safetySum);
-
-      const flowF2S = income - (mustSum + safetySum);
-      $('flowF2S').value = round1(flowF2S);
-
-      // 2단계: 현금성
-      const cashAssets = g('cashAssets');
-      const emMonths   = clamp(g('emMonths',6),3,12); $('emMonths').value = emMonths;
-      const needEmergency = mustSum * emMonths; $('needEmergency').value = round1(needEmergency);
-      const excess = Math.max(0, cashAssets - needEmergency); $('excessCash').value = round1(excess);
-      const cashRate = clamp(g('cashRate',50),0,100); $('cashRate').value = cashRate;
-      const spreadMonths = clamp(g('spreadMonths',12),6,24); $('spreadMonths').value = spreadMonths;
-      const cashAdj = (excess * (cashRate/100)) / (spreadMonths || 1); $('cashAdj').value = round1(cashAdj);
-
-      // 2단계: 보존성
-      const preserveMature = g('preserveMature');
-      const preserveRate   = clamp(g('preserveRate',25),0,100); $('preserveRate').value = preserveRate;
-      const preserveSpread = clamp(g('preserveSpread',6),3,24); $('preserveSpread').value = preserveSpread;
-      const preserveAdj = (preserveMature * (preserveRate/100)) / (preserveSpread || 1); $('preserveAdj').value = round1(preserveAdj);
-
-      // 권장 전환률 갱신
-      suggestPreserveRate(mustSum, cashAssets);
-
-      // 부채 보정(입력칸이 없어도 0으로 안전 처리)
-      const debtDelta = g('debtDelta', 0);
-
-      const bsAdj = cashAdj + preserveAdj - Math.max(0, debtDelta) + Math.min(0, debtDelta);
-      $('bsAdj').value = round1(bsAdj);
-
-      const final = flowF2S + bsAdj;
-      $('finalF2S').value = round1(final);
-
-      const msg = [];
-      if (excess <= 0) msg.push('현금성 자산이 비상자금 목표에 미달하여 현금성 보정 가산이 없습니다.');
-      if (preserveMature > 0 && preserveRate > 0) msg.push('보존성 만기금 일부를 기간에 나눠 반영 중입니다.');
-      if (debtDelta !== 0) msg.push(`부채 스케줄 변화로 월 ${Math.abs(debtDelta).toFixed(1)}만 원 ${debtDelta>0?'추가 상환(차감)':'감소(가산)'} 반영.`);
-      if (msg.length === 0) msg.push('계산이 완료되었습니다. 결과는 만 원 단위로 반올림 표시됩니다.');
-      $('message')?.textContent = msg.join(' ');
-    }
-
-    // 저장/불러오기/초기화
-    function saveLocal(){
-      const ids = [...INPUT_IDS, ...ADVISOR_IDS, ...RESULT_IDS];
-      const data = {};
-      ids.forEach(id => {
-        const el = $(id); if (!el) return;
-        data[id] = (el.type === 'checkbox') ? el.checked : el.value;
-      });
-      localStorage.setItem('dmp_f2s', JSON.stringify(data));
-      alert('이 브라우저에 저장했습니다.');
-    }
-    function loadLocal(){
-      const raw = localStorage.getItem('dmp_f2s');
-      if(!raw){ alert('저장된 데이터가 없습니다.'); return; }
-      const data = JSON.parse(raw);
-      Object.keys(data).forEach(id => {
-        const el = $(id); if (!el) return;
-        if (el.type === 'checkbox') el.checked = !!data[id]; else el.value = data[id];
-      });
-      calc(); alert('불러오기 완료.');
-    }
-    function resetAll(){
-      if(!confirm('모든 값을 초기화할까요?')) return;
-      localStorage.removeItem('dmp_f2s');
-      [...INPUT_IDS, ...ADVISOR_IDS].forEach(id=>{
-        const el=$(id); if(!el) return;
-        if(el.type==='checkbox') el.checked=!!DEFAULTS[id];
-        else if(DEFAULTS[id]!=null) el.value=DEFAULTS[id];
-        else el.value='';
-      });
-      calc();
-    }
-
-    // TSV(UTF-16LE+BOM) 한글깨짐 방지
-    function toUTF16LEWithBOM(str){
-      const bom=new Uint8Array([0xFF,0xFE]);
-      const buf=new Uint8Array(str.length*2);
-      for(let i=0;i<str.length;i++){ const c=str.charCodeAt(i); buf[i*2]=c&0xFF; buf[i*2+1]=(c>>8)&0xFF; }
-      const out=new Uint8Array(bom.length+buf.length); out.set(bom,0); out.set(buf,bom.length); return out;
-    }
-    function exportTSV(){
-      const rows=[
-        ['항목','값(만원/또는 단위)'],
-        ['세후 소득', $('income').value],
-        ['필수 합계', $('mustSum').value],
-        ['안전망 합계', $('safetySum').value],
-        ['F2S-흐름', $('flowF2S').value],
-        ['현금성 자산', $('cashAssets').value],
-        ['비상자금 목표(개월)', $('emMonths').value],
-        ['적정 비상자금', $('needEmergency').value],
-        ['초과 현금성', $('excessCash').value],
-        ['현금성 보정(월)', $('cashAdj').value],
-        ['보존성 만기(6개월내)', $('preserveMature').value],
-        ['보존성 전환율(%)', $('preserveRate').value],
-        ['보존성 분할기간(개월)', $('preserveSpread').value],
-        ['보존성 보정(월)', $('preserveAdj').value],
-        ['권장 전환률(%)', $('suggestedRate').value],
-        ['BS-보정 합계(월)', $('bsAdj').value],
-        ['최종 F2S(월)', $('finalF2S').value],
-      ];
-      const tsv=rows.map(r=>r.join('\t')).join('\r\n');
-      const blob=new Blob([toUTF16LEWithBOM(tsv)],{type:'text/tab-separated-values;charset=utf-16le;'});
-      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='dmp_f2s_worksheet.tsv'; a.click(); URL.revokeObjectURL(a.href);
-    }
-
-    // 초기화 & 이벤트
-    window.addEventListener('DOMContentLoaded', ()=>{
-      Object.entries(DEFAULTS).forEach(([id,v])=>{ const el=$(id); if(!el) return; if(el.type==='checkbox') el.checked=!!v; else el.value=v; });
-      [...INPUT_IDS, ...ADVISOR_IDS].forEach(id => $(id)?.addEventListener('input', calc));
-      $('save')?.addEventListener('click', saveLocal);
-      $('load')?.addEventListener('click', loadLocal);
-      $('reset')?.addEventListener('click', resetAll);
-      $('exportCsv')?.addEventListener('click', exportTSV);
-      $('applySuggested')?.addEventListener('click', ()=>{ $('preserveRate').value = $('suggestedRate').value; calc(); });
-      calc();
-    });
-  </script>
 </body>
 </html>
