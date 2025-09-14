@@ -4,141 +4,202 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>DMP — 욕망 해소 자금 산출 워크시트</title>
-<style>
-  /* ===== Theme ===== */
-  :root{
-    --bg:#0b1020; --card:#131a33; --muted:#9fb0ff; --text:#e9edff;
-    --accent:#7ea7ff; --danger:#ff7e7e; --ok:#7effb6; --border:rgba(255,255,255,.10);
-  }
-  *{ box-sizing:border-box; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',Arial,sans-serif; }
-  body{ margin:0; background:linear-gradient(180deg,#0b1020,#0b1020 50%,#0f1530); color:var(--text); }
 
-  /* ===== Layout ===== */
-  .wrap{ max-width:980px; margin:40px auto; padding:0 16px; }
-  .title{ font-size:28px; font-weight:800; letter-spacing:-.3px; margin-bottom:4px; }
-  .subtitle{ color:var(--muted); margin-bottom:24px; }
+  
+  
+ <script>
+  // ===== 유틸 =====
+  const $ = (id) => document.getElementById(id);
+  const num = (v) => (isFinite(parseFloat(v)) ? parseFloat(v) : 0);
+  const round1 = (v) => (Math.round((v ?? 0) * 10) / 10).toFixed(1);
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
-  .card{
-    background:var(--card);
-    border:1px solid var(--border);
-    border-radius:16px;
-    padding:20px;
-    margin-bottom:18px;
-    box-shadow:0 8px 24px rgba(0,0,0,.25);
-  }
+  // 입력 필드 ID (직접 입력받는 값들)
+  const INPUT_IDS = [
+    'income','rent','transport','food','telIns','others',
+    'emFund','debtPay','futureSav',
+    'cashAssets','emMonths','cashRate','spreadMonths',
+    'preserveMature','preserveRate','preserveSpread','debtDelta'
+  ];
 
-  /* 좌/우 두 칸(열) */
-  .grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    column-gap:24px;   /* 열 사이 간격 */
-    row-gap:12px;
-  }
+  // 계산 결과 필드 ID
+  const RESULT_IDS = [
+    'mustSum','safetySum','flowF2S',
+    'needEmergency','excessCash','cashAdj','preserveAdj','bsAdj',
+    'finalF2S'
+  ];
 
-  /* 한 줄: [라벨 | 입력 | 단위]  → 값 블록을 '칸의 우측'에 붙임 */
-  .row{
-    display:flex;
-    align-items:center;
-    gap:2px;                 /* 라벨↔입력, 입력↔단위 간격 최소화 */
-    margin:8px 0;
-    width:100%;
-  }
-  .row > label{
-    flex:1 1 auto;           /* 라벨이 남는 공간을 먹고 값은 우측으로 밀림 */
-    color:#c9d4ff; font-size:14px;
-    text-align:left;
-    white-space:nowrap;
-  }
+  // 기본값(예시)
+  const DEFAULTS = {
+    income: 280, rent: 70, transport: 15, food: 50, telIns: 20, others: 25,
+    emFund: 30, debtPay: 25, futureSav: 0,
+    cashAssets: 800, emMonths: 6, cashRate: 50, spreadMonths: 12,
+    preserveMature: 0, preserveRate: 25, preserveSpread: 6, debtDelta: 0
+  };
 
-  /* ===== Inputs (숫자 우측 정렬) ===== */
-  input[type="number"], input[readonly], input.result{
-    width:110px;             /* 필요 시 100~130px로 미세 조정 */
-    padding:7px 10px;
-    text-align:right;        /* ★ 숫자 우측 정렬 */
-    font-variant-numeric: tabular-nums;
-    border-radius:10px;
-    border:1px solid var(--border);
-    background:rgba(255,255,255,.05);
-    color:var(--text);
-    outline:none;
-  }
-  input::placeholder{ color:#93a3ff; opacity:.6; }
+  // ===== 계산 로직 =====
+  function calc() {
+    // 1단계 합계
+    const income = num($('income').value);
+    const mustSum = num($('rent').value) + num($('transport').value) + num($('food').value) + num($('telIns').value) + num($('others').value);
+    $('mustSum').value = round1(mustSum);
 
-  /* 단위(만원/월)를 입력 바로 옆에 밀착 */
-  .k{
-    margin-left:0;
-    white-space:nowrap;
-    opacity:.95;
-  }
+    const safetySum = num($('emFund').value) + num($('debtPay').value) + num($('futureSav').value);
+    $('safetySum').value = round1(safetySum);
 
-  /* 긴 라벨(결과/합계)에서도 같은 정렬 유지 */
-  .row:has(> label.result){ gap:2px; }
-  input.result{ width:120px; }
+    const flowF2S = income - (mustSum + safetySum);
+    $('flowF2S').value = round1(flowF2S);
 
-  /* ===== 시각 구분: 입력칸 vs 결과칸 ===== */
-  input[type="number"]:not([readonly]) {
-    background: rgba(126,167,255,.10);
-    border-color: rgba(126,167,255,.45);
-  }
-  input[type="number"]:not([readonly]):focus {
-    outline: 2px solid var(--accent);
-    box-shadow: 0 0 0 4px rgba(126,167,255,.15);
-  }
-  input[readonly]{
-    background: rgba(126,255,182,.10);
-    border-color: rgba(126,255,182,.45);
-    cursor: default;
-  }
-  input[readonly]:focus{
-    outline: 2px solid var(--ok);
-    box-shadow: 0 0 0 4px rgba(126,255,182,.15);
-  }
-  input[type="number"]:not([readonly])::placeholder { color:#a9bbff; }
-  input[readonly]::placeholder { color:#b7ffd9; }
+    // 2단계: 현금성 보정
+    const cashAssets = num($('cashAssets').value);
+    const emMonths = clamp(num($('emMonths').value), 3, 12);
+    $('emMonths').value = emMonths;
 
-  /* ===== Titles & misc ===== */
-  .section-title{ font-weight:800; margin-bottom:8px; font-size:18px; }
-  .pill{
-    display:inline-block; padding:4px 10px; border-radius:999px;
-    background:rgba(126,167,255,.12); color:var(--accent);
-    font-weight:700; font-size:12px; margin-left:8px;
-  }
-  .result{ font-size:20px; font-weight:800; }
-  .result.ok{ color:var(--ok); }
-  .result.warn{ color:var(--danger); }
-  .hint{ color:#92a1ff; font-size:12px; }
-  .muted{ color:#b7c4ff; opacity:.8; font-size:14px; }
+    const needEmergency = mustSum * emMonths;
+    $('needEmergency').value = round1(needEmergency);
 
-  .btns{ display:flex; gap:10px; flex-wrap:wrap; }
-  button{
-    background:linear-gradient(180deg,#2a3a7d,#24336b);
-    border:1px solid var(--border);
-    color:var(--text);
-    padding:10px 14px;
-    border-radius:12px;
-    cursor:pointer;
-  }
-  button.secondary{ background:rgba(255,255,255,.05); }
-  button.danger{ background:linear-gradient(180deg,#7d2a2a,#6b2424); }
+    const excess = Math.max(0, cashAssets - needEmergency);
+    $('excessCash').value = round1(excess);
 
-  .footer{ opacity:.75; font-size:12px; margin-top:8px; }
-  .hr{ border-top:1px dashed rgba(255,255,255,.15); margin:14px 0; }
-  .note{
-    background:rgba(255,255,255,.04);
-    border:1px solid var(--border);
-    border-radius:12px;
-    padding:10px 12px;
-    font-size:13px;
-    color:#cdd6ff;
+    const cashRate = clamp(num($('cashRate').value), 0, 100);
+    $('cashRate').value = cashRate;
+    const spreadMonths = clamp(num($('spreadMonths').value), 6, 24);
+    $('spreadMonths').value = spreadMonths;
+
+    const cashAdj = (excess * (cashRate / 100)) / (spreadMonths || 1);
+    $('cashAdj').value = round1(cashAdj);
+
+    // 보존성 보정
+    const preserveMature = num($('preserveMature').value);
+    const preserveRate = clamp(num($('preserveRate').value), 0, 100);
+    $('preserveRate').value = preserveRate;
+    const preserveSpread = clamp(num($('preserveSpread').value), 3, 24);
+    $('preserveSpread').value = preserveSpread;
+
+    const preserveAdj = (preserveMature * (preserveRate / 100)) / (preserveSpread || 1);
+    $('preserveAdj').value = round1(preserveAdj);
+
+    // 부채 보정 (증가 +는 차감, 감소 -는 가산)
+    const debtDelta = num($('debtDelta').value);
+    const bsAdj = cashAdj + preserveAdj - Math.max(0, debtDelta) + Math.min(0, debtDelta);
+    $('bsAdj').value = round1(bsAdj);
+
+    // 최종
+    const final = flowF2S + bsAdj;
+    $('finalF2S').value = round1(final);
+
+    renderMessage({ excess, preserveMature, preserveRate, debtDelta });
   }
 
-  /* ===== Responsive ===== */
-  @media (max-width:760px){
-    .grid{ grid-template-columns:1fr; column-gap:0; row-gap:10px; }
-    input[type="number"], input[readonly]{ width:100px; }
-    input.result{ width:110px; }
+  function renderMessage({ excess, preserveMature, preserveRate, debtDelta }) {
+    const el = $('message');
+    if (!el) return;
+
+    const msg = [];
+    if (excess <= 0) msg.push('현금성 자산이 비상자금 목표에 미달하여 현금성 보정 가산이 없습니다.');
+    if (preserveMature > 0 && preserveRate > 0) msg.push('보존성 만기금 일부를 기간에 나눠 반영 중입니다.');
+    if (debtDelta !== 0) msg.push(`부채 스케줄 변화로 월 ${Math.abs(debtDelta).toFixed(1)}만 원 ${debtDelta > 0 ? '추가 상환(차감)' : '감소(가산)'} 반영.`);
+    if (msg.length === 0) msg.push('계산이 완료되었습니다. 결과는 만 원 단위로 반올림 표시됩니다.');
+
+    el.textContent = msg.join(' ');
   }
-</style>
+
+  // ===== 저장/불러오기/초기화 =====
+  function saveLocal() {
+    const data = {};
+    [...INPUT_IDS, ...RESULT_IDS].forEach((id) => (data[id] = ($(id)?.value ?? '')));
+    localStorage.setItem('dmp_f2s', JSON.stringify(data));
+    alert('이 브라우저에 저장했습니다.');
+  }
+
+  function loadLocal() {
+    const raw = localStorage.getItem('dmp_f2s');
+    if (!raw) { alert('저장된 데이터가 없습니다.'); return; }
+    const data = JSON.parse(raw);
+    Object.keys(data).forEach((id) => { if ($(id)) $(id).value = data[id]; });
+    calc();
+    alert('불러오기 완료.');
+  }
+
+  function resetAll() {
+    if (!confirm('모든 값을 초기화할까요?')) return;
+    localStorage.removeItem('dmp_f2s');
+    INPUT_IDS.forEach((id) => ($(id).value = ''));
+    // 기본 옵션값 되돌리기
+    $('emMonths').value = 6; $('cashRate').value = 50; $('spreadMonths').value = 12;
+    $('preserveRate').value = 25; $('preserveSpread').value = 6; $('debtDelta').value = 0;
+    calc();
+  }
+
+  // ===== TSV(엑셀 호환) 내보내기 (UTF-16LE + BOM) =====
+  function toUTF16LEWithBOM(str){
+    const bom = new Uint8Array([0xFF, 0xFE]);        // UTF-16LE BOM
+    const buf = new Uint8Array(str.length * 2);
+    for (let i = 0; i < str.length; i++) {
+      const code = str.charCodeAt(i);
+      buf[i*2]   = code & 0xFF;                      // low byte
+      buf[i*2+1] = (code >> 8) & 0xFF;               // high byte
+    }
+    const out = new Uint8Array(bom.length + buf.length);
+    out.set(bom, 0); out.set(buf, bom.length);
+    return out;
+  }
+
+  function exportTSV() {
+    const rows = [
+      ['항목','값(만원/또는 단위)'],
+      ['세후 소득', $('income').value],
+      ['필수 합계', $('mustSum').value],
+      ['안전망 합계', $('safetySum').value],
+      ['F2S-흐름', $('flowF2S').value],
+      ['현금성 자산', $('cashAssets').value],
+      ['비상자금 목표(개월)', $('emMonths').value],
+      ['적정 비상자금', $('needEmergency').value],
+      ['초과 현금성', $('excessCash').value],
+      ['현금성 보정(월)', $('cashAdj').value],
+      ['보존성 만기(6개월내)', $('preserveMature').value],
+      ['보존성 전환율(%)', $('preserveRate').value],
+      ['보존성 분할기간(개월)', $('preserveSpread').value],
+      ['보존성 보정(월)', $('preserveAdj').value],
+      ['부채 변화(월)', $('debtDelta').value],
+      ['BS-보정 합계(월)', $('bsAdj').value],
+      ['최종 F2S(월)', $('finalF2S').value],
+    ];
+    const tsv = rows.map(r => r.join('\t')).join('\r\n');
+    const bytes = toUTF16LEWithBOM(tsv);
+    const blob = new Blob([bytes], { type: 'text/tab-separated-values;charset=utf-16le;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'dmp_f2s_worksheet.tsv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  // ===== 초기화 =====
+  window.addEventListener('DOMContentLoaded', () => {
+    // 저장된 값 우선 로드, 없으면 DEFAULTS 적용
+    const raw = localStorage.getItem('dmp_f2s');
+    if (raw) {
+      try {
+        const data = JSON.parse(raw);
+        INPUT_IDS.forEach((id) => { if ($(id) && data[id] != null) $(id).value = data[id]; });
+      } catch { /* ignore */ }
+    } else {
+      Object.entries(DEFAULTS).forEach(([id, v]) => { if ($(id)) $(id).value = v; });
+    }
+
+    // 이벤트 바인딩
+    INPUT_IDS.forEach((id) => $(id).addEventListener('input', calc));
+
+    $('save')?.addEventListener('click', saveLocal);
+    $('load')?.addEventListener('click', loadLocal);
+    $('reset')?.addEventListener('click', resetAll);
+    $('exportCsv')?.addEventListener('click', exportTSV);
+
+    // 최초 계산
+    calc();
+  });
+</script>
 
 
 
