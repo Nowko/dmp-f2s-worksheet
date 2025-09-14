@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>DMP — 욕망 해소 자금 산출 워크시트 (Step1)</title>
+  <title>DMP — 욕망 해소 자금 산출 워크시트 (통합)</title>
   <style>
     :root{
       --bg:#0b1020; --card:#131a33; --muted:#9fb0ff; --text:#e9edff;
@@ -12,137 +12,336 @@
     *{ box-sizing:border-box; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',Arial,sans-serif; }
     body{ margin:0; background:linear-gradient(180deg,#0b1020,#0b1020 50%,#0f1530); color:var(--text); }
     .wrap{ max-width:980px; margin:32px auto; padding:0 16px; }
-    .card{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:0 8px 24px rgba(0,0,0,.25); }
+    .title{ font-size:28px; font-weight:800; letter-spacing:-.2px; margin-bottom:6px; }
+    .subtitle{ color:var(--muted); margin-bottom:22px; }
+
+    .card{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; margin-bottom:18px; box-shadow:0 8px 24px rgba(0,0,0,.25); }
     .section-title{ font-weight:800; font-size:18px; margin-bottom:8px; }
     .pill{ display:inline-block; padding:4px 10px; border-radius:999px; background:rgba(126,167,255,.12); color:var(--accent); font-weight:700; font-size:12px; margin-left:8px; }
     .hr{ border-top:1px dashed rgba(255,255,255,.15); margin:14px 0; }
     .muted{ color:#b7c4ff; opacity:.85; font-size:14px; }
-    .title-line{ font-size:20px; font-weight:800; margin:0 0 12px; }
 
     /* 2열 그리드 */
     .grid{ display:grid; grid-template-columns:minmax(300px,1fr) minmax(300px,1fr); gap:12px 24px; }
 
-    /* 한 줄(라벨-값-단위) — 우측 붙임 */
+    /* 라벨-값-단위 한 줄(우측 밀착) */
     .row{ display:flex; align-items:center; justify-content:flex-end; gap:6px; margin:8px 0; width:100%; }
     .row > label{ color:#c9d4ff; font-size:14px; white-space:nowrap; text-align:right; margin-right:6px; }
     .k{ margin-left:4px; white-space:nowrap; opacity:.95; }
 
-    /* 입력/결과 필드 */
-    input[type="number"], input[readonly]{
+    input[type="number"], input[readonly], input.result{
       width:120px; padding:9px 12px; border-radius:10px; border:1px solid var(--border);
-      text-align:right; color:var(--text); background:rgba(126,167,255,.10);
-      font-variant-numeric:tabular-nums; outline:none;
+      text-align:right; font-variant-numeric:tabular-nums; outline:none; color:var(--text);
     }
-    input[type="number"]:focus{ outline:2px solid var(--accent); box-shadow:0 0 0 4px rgba(126,167,255,.15); }
-    /* 결과(읽기전용)는 녹색 톤 */
-    input[readonly]{ background:rgba(126,255,182,.10); border-color:rgba(126,255,182,.45); }
+    /* 입력칸(파란톤) */
+    input[type="number"]:not([readonly]){ background:rgba(126,167,255,.10); border-color:rgba(126,167,255,.45); }
+    input[type="number"]:not([readonly]):focus{ outline:2px solid var(--accent); box-shadow:0 0 0 4px rgba(126,167,255,.15); }
+    /* 결과칸(초록톤) */
+    input[readonly]{ background:rgba(126,255,182,.10); border-color:rgba(126,255,182,.45); cursor:default; }
+    input[readonly]:focus{ outline:2px solid var(--ok); box-shadow:0 0 0 4px rgba(126,255,182,.15); }
     input.result{ width:140px; font-weight:800; }
 
-    /* 긴 문구 라벨은 좌측, 값은 우측 */
+    select{
+      width:140px; padding:9px 12px; border-radius:10px; border:1px solid rgba(126,167,255,.45);
+      background:rgba(126,167,255,.10); color:var(--text); outline:none;
+    }
+
+    .btns{ display:flex; gap:10px; flex-wrap:wrap; }
+    button{ background:linear-gradient(180deg,#2a3a7d,#24336b); border:1px solid var(--border); color:var(--text); padding:10px 14px; border-radius:12px; cursor:pointer; }
+    button.secondary{ background:rgba(255,255,255,.06); }
+    .note{ background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13px; color:#cdd6ff; }
+    .footer{ opacity:.75; font-size:12px; margin-top:8px; }
+
     .row.longlabel{ justify-content:space-between; }
 
     @media (max-width:760px){
-      .grid{ grid-template-columns:1fr; }
+      .grid{ grid-template-columns:1fr; gap:10px; }
       input[type="number"], input[readonly]{ width:110px; }
-      input.result{ width:125px; }
+      input.result, select{ width:125px; }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="card">
-      <div class="title-line">1단계: 현금흐름 <span class="pill">F2S</span></div>
+    <div class="title">〈욕망 해소 자금 산출 워크시트〉</div>
+    <div class="subtitle">현금흐름(3장) + 자산구조(4장)를 겹쳐, <b>안심하고 쓸 수 있는 월 금액(Free to Spend)</b>을 구합니다.</div>
 
-      <div class="row">
-        <label>세후 소득</label>
-        <input type="number" id="income" step="0.1" min="0" placeholder="예: 280">
-        <div class="k">만원/월</div>
-      </div>
+    <!-- 1단계 -->
+    <div class="card">
+      <div class="section-title">1단계: 현금흐름 <span class="pill">F2S</span></div>
+      <div class="row"><label>세후 소득</label><input type="number" id="income" step="0.1" min="0"><div class="k">만원/월</div></div>
 
       <div class="hr"></div>
       <div class="muted"><b>필수 생활비</b></div>
       <div class="grid">
-        <div class="row"><label>주거비</label><input type="number" id="rent" step="0.1" min="0" placeholder="예: 70"><div class="k">만원</div></div>
-        <div class="row"><label>교통비</label><input type="number" id="transport" step="0.1" min="0" placeholder="예: 15"><div class="k">만원</div></div>
-        <div class="row"><label>식비(최소 필요)</label><input type="number" id="food" step="0.1" min="0" placeholder="예: 50"><div class="k">만원</div></div>
-        <div class="row"><label>통신비+보험료</label><input type="number" id="telIns" step="0.1" min="0" placeholder="예: 20"><div class="k">만원</div></div>
-        <div class="row"><label>기타 고정비(공과금 등)</label><input type="number" id="others" step="0.1" min="0" placeholder="예: 25"><div class="k">만원</div></div>
+        <div class="row"><label>주거비</label><input type="number" id="rent" step="0.1" min="0"><div class="k">만원</div></div>
+        <div class="row"><label>교통비</label><input type="number" id="transport" step="0.1" min="0"><div class="k">만원</div></div>
+        <div class="row"><label>식비(최소 필요)</label><input type="number" id="food" step="0.1" min="0"><div class="k">만원</div></div>
+        <div class="row"><label>통신비+보험료</label><input type="number" id="telIns" step="0.1" min="0"><div class="k">만원</div></div>
+        <div class="row"><label>기타 고정비(공과금 등)</label><input type="number" id="others" step="0.1" min="0"><div class="k">만원</div></div>
       </div>
-
       <div class="row"><label class="muted">필수 생활비 합계</label><input type="number" id="mustSum" readonly><div class="k">만원</div></div>
 
       <div class="hr"></div>
       <div class="muted"><b>안전망 지출</b></div>
       <div class="grid">
-        <div class="row"><label>비상자금 적립</label><input type="number" id="emFund" step="0.1" min="0" placeholder="예: 30"><div class="k">만원</div></div>
-        <div class="row"><label>부채 상환(원리금)</label><input type="number" id="debtPay" step="0.1" min="0" placeholder="예: 25"><div class="k">만원</div></div>
-        <div class="row"><label>최소 미래 저축</label><input type="number" id="futureSav" step="0.1" min="0" placeholder="예: 0~40"><div class="k">만원</div></div>
+        <div class="row"><label>비상자금 적립</label><input type="number" id="emFund" step="0.1" min="0"><div class="k">만원</div></div>
+        <div class="row"><label>부채 상환(원리금)</label><input type="number" id="debtPay" step="0.1" min="0"><div class="k">만원</div></div>
+        <div class="row"><label>최소 미래 저축</label><input type="number" id="futureSav" step="0.1" min="0"><div class="k">만원</div></div>
       </div>
-
       <div class="row"><label class="muted">안전망 지출 합계</label><input type="number" id="safetySum" readonly><div class="k">만원</div></div>
 
       <div class="hr"></div>
-      <div class="row longlabel">
-        <label class="result">F2S-흐름 = 세후 소득 − (필수 + 안전망)</label>
-        <input class="result" id="flowF2S" readonly>
-        <div class="k result">만원/월</div>
-      </div>
-
-      <div id="message" class="muted" style="margin-top:8px;"></div>
+      <div class="row longlabel"><label class="result">F2S-흐름 = 세후 소득 − (필수 + 안전망)</label><input class="result" id="flowF2S" readonly><div class="k result">만원/월</div></div>
+      <div id="msg1" class="note" style="margin-top:8px;"></div>
     </div>
+
+    <!-- 2단계 -->
+    <div class="card">
+      <div class="section-title">2단계: 자산 구조 <span class="pill">BS-보정</span></div>
+
+      <div class="muted"><b>현금성 자산 보정</b></div>
+      <div class="grid">
+        <div class="row"><label>현금성 자산 총액</label><input type="number" id="cashAssets" step="0.1" min="0"><div class="k">만원</div></div>
+        <div class="row"><label>비상자금 목표(개월)</label><input type="number" id="emMonths" step="1" min="3" max="12"><div class="k">개월</div></div>
+        <div class="row"><label>현금성 반영률</label><input type="number" id="cashRate" step="5" min="0" max="100"><div class="k">%</div></div>
+        <div class="row"><label>보호기간(초과 현금 분할기간)</label><input type="number" id="spreadMonths" step="1" min="6" max="24"><div class="k">개월</div></div>
+      </div>
+      <div class="row"><label class="muted">적정 비상자금(필수 생활비 합계 × 목표 개월)</label><input type="number" id="needEmergency" readonly><div class="k">만원</div></div>
+      <div class="row"><label class="muted">초과 현금성 자산 (0 미만이면 0)</label><input type="number" id="excessCash" readonly><div class="k">만원</div></div>
+      <div class="row"><label class="muted">현금성 보정(월 가산) = 초과×반영률÷보호기간</label><input type="number" id="cashAdj" readonly><div class="k">만원/월</div></div>
+
+      <div class="hr"></div>
+      <div class="muted"><b>보존성 자산 보정</b></div>
+      <div class="grid">
+        <div class="row"><label>6개월 내 만기 금액</label><input type="number" id="preserveMature" step="0.1" min="0"><div class="k">만원</div></div>
+        <div class="row"><label>전환 반영률</label><input type="number" id="preserveRate" step="5" min="0" max="100"><div class="k">%</div></div>
+        <div class="row"><label>전환 분할기간</label><input type="number" id="preserveSpread" step="1" min="3" max="24"><div class="k">개월</div></div>
+      </div>
+      <div class="row"><label class="muted">보존성 보정(월 가산) = 만기×전환율÷분할기간</label><input type="number" id="preserveAdj" readonly><div class="k">만원/월</div></div>
+
+      <div class="hr"></div>
+      <div class="muted"><b>권장 전환률(자동)</b> <span class="hint" style="opacity:.8">체크리스트 기반 0~50% 제안</span>
+      </div>
+      <div class="grid">
+        <div class="row"><label>목적자금(1년 내 사용)</label><input type="checkbox" id="earmark"><div class="k"></div></div>
+        <div class="row"><label>소득 안정성</label>
+          <select id="incomeStability">
+            <option value="stable">안정적</option>
+            <option value="normal" selected>보통</option>
+            <option value="volatile">변동 큼</option>
+          </select><div class="k"></div>
+        </div>
+        <div class="row"><label>만기 3개월 이내</label><input type="checkbox" id="maturitySoon"><div class="k"></div></div>
+        <div class="row"><label>중도해지/수수료 손실</label>
+          <select id="penaltyRisk">
+            <option value="none" selected>거의 없음</option>
+            <option value="some">보통</option>
+            <option value="high">손실 큼</option>
+          </select><div class="k"></div>
+        </div>
+        <div class="row"><label>6개월 내 큰 고정지출</label><input type="checkbox" id="bigExpense"><div class="k"></div></div>
+      </div>
+      <div class="row"><label class="muted">권장 전환률(자동 계산)</label><input type="number" id="suggestedRate" readonly><div class="k">%</div></div>
+      <div class="btns"><button id="applySuggested" class="secondary">권장치 적용</button></div>
+
+      <div class="hr"></div>
+      <div class="row longlabel"><label class="result">BS-보정 합계 = 현금성(월) + 보존성(월)</label><input class="result" id="bsAdj" readonly><div class="k result">만원/월</div></div>
+      <div id="msg2" class="note" style="margin-top:8px;"></div>
+    </div>
+
+    <!-- 최종 -->
+    <div class="card">
+      <div class="section-title">최종 결과</div>
+      <div class="row longlabel"><label class="result">최종 욕망 해소 자금(월) = F2S-흐름 + BS-보정</label><input class="result" id="finalF2S" readonly><div class="k result">만원/월</div></div>
+      <div id="message" class="note" style="margin-top:10px;"></div>
+      <div class="btns" style="margin-top:14px;">
+        <button id="save">로컬 저장</button>
+        <button class="secondary" id="load">불러오기</button>
+        <button class="secondary" id="reset">초기화</button>
+        <button class="secondary" id="exportCsv">TSV 내보내기</button>
+      </div>
+      <div class="footer">※ 저장은 이 브라우저(로컬스토리지)에만 보관됩니다.</div>
+    </div>
+
+    <div class="footer">© DMP — Default Money Plan.</div>
   </div>
 
   <script>
-    (function(){
-      const $  = id => document.getElementById(id);
-      const num = v => (isFinite(parseFloat(v)) ? parseFloat(v) : 0);
-      const r1 = v => (Math.round((v ?? 0) * 10) / 10).toFixed(1);
+    // ===== 유틸 =====
+    const $ = id => document.getElementById(id);
+    const num = v => (isFinite(parseFloat(v)) ? parseFloat(v) : 0);
+    const r1 = v => (Math.round((v ?? 0) * 10) / 10).toFixed(1);
+    const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
 
-      // 계산 함수
-      function calc(){
-        const income = num($('income').value);
+    const INPUT_IDS = [
+      'income','rent','transport','food','telIns','others',
+      'emFund','debtPay','futureSav',
+      'cashAssets','emMonths','cashRate','spreadMonths',
+      'preserveMature','preserveRate','preserveSpread'
+    ];
+    const ADVISOR_IDS = ['earmark','incomeStability','maturitySoon','penaltyRisk','bigExpense'];
+    const RESULT_IDS  = ['mustSum','safetySum','flowF2S','needEmergency','excessCash','cashAdj','preserveAdj','bsAdj','finalF2S','suggestedRate'];
 
-        const must = num($('rent').value)
-                   + num($('transport').value)
-                   + num($('food').value)
-                   + num($('telIns').value)
-                   + num($('others').value);
-        $('mustSum').value = r1(must);
+    const DEFAULTS = {
+      // 1단계
+      income:280, rent:70, transport:15, food:50, telIns:20, others:25,
+      emFund:30, debtPay:25, futureSav:0,
+      // 2단계
+      cashAssets:800, emMonths:6, cashRate:50, spreadMonths:12,
+      preserveMature:0, preserveRate:25, preserveSpread:6,
+      earmark:false, incomeStability:'normal', maturitySoon:false, penaltyRisk:'none', bigExpense:false
+    };
 
-        const safety = num($('emFund').value)
-                     + num($('debtPay').value)
-                     + num($('futureSav').value);
-        $('safetySum').value = r1(safety);
+    // 권장 전환률 계산(0~50%)
+    function suggestRate(mustSum, cashAssets){
+      let rate = 25; // 기본
+      const coverage = mustSum>0 ? cashAssets/mustSum : 0;  // 월필수비 대비 현금성 커버개월수
+      if ($('earmark').checked) rate -= 15;            // 1년내 목적자금이면 낮춤
+      if (coverage < 3) rate -= 10; else if (coverage >= 6) rate += 10;
+      const st = $('incomeStability').value;
+      if (st==='stable') rate += 5; else if (st==='volatile') rate -= 10;
+      if ($('maturitySoon').checked) rate += 5;
+      const risk = $('penaltyRisk').value;
+      if (risk==='some') rate -= 5; else if (risk==='high') rate -= 12;
+      if ($('bigExpense').checked) rate -= 5;
+      rate = Math.round(clamp(rate,0,50));
+      $('suggestedRate').value = rate;
+      return rate;
+    }
 
-        const flow = income - must - safety;
-        $('flowF2S').value = r1(flow);
+    function calc(){
+      // 1단계
+      const income  = num($('income').value);
+      const mustSum = num($('rent').value)+num($('transport').value)+num($('food').value)+num($('telIns').value)+num($('others').value);
+      $('mustSum').value = r1(mustSum);
 
-        $('message').textContent = '계산 완료! 입력을 바꾸면 실시간으로 다시 계산됩니다.';
-      }
+      const safetySum = num($('emFund').value)+num($('debtPay').value)+num($('futureSav').value);
+      $('safetySum').value = r1(safetySum);
 
-      // 초기 예제값(placeholder가 아니라 실제 value로 세팅)
-      function setDefaults(){
-        const defaults = {
-          income:280, rent:70, transport:15, food:50, telIns:20, others:25,
-          emFund:30, debtPay:25, futureSav:0
-        };
-        Object.entries(defaults).forEach(([id, val])=>{
-          if ($(id)) $(id).value = val;
-        });
-      }
+      const flow = income - (mustSum + safetySum);
+      $('flowF2S').value = r1(flow);
 
-      function wire(){
-        ['income','rent','transport','food','telIns','others','emFund','debtPay','futureSav']
-          .forEach(id => $(id).addEventListener('input', calc));
-      }
+      // 2단계: 현금성
+      const cashAssets = num($('cashAssets').value);
+      const emMonths   = clamp(num($('emMonths').value || 6),3,12); $('emMonths').value = emMonths;
+      const needEmergency = mustSum * emMonths; $('needEmergency').value = r1(needEmergency);
+      const excess = Math.max(0, cashAssets - needEmergency); $('excessCash').value = r1(excess);
+      const cashRate = clamp(num($('cashRate').value || 50),0,100); $('cashRate').value = cashRate;
+      const spreadMonths = clamp(num($('spreadMonths').value || 12),6,24); $('spreadMonths').value = spreadMonths;
+      const cashAdj = (excess * (cashRate/100)) / (spreadMonths || 1); $('cashAdj').value = r1(cashAdj);
 
-      // 시작
-      document.addEventListener('DOMContentLoaded', ()=>{
-        setDefaults();   // 예제값 주입
-        wire();          // 실시간 계산 연결
-        calc();          // 즉시 계산 표시
+      // 2단계: 보존성
+      const preserveMature = num($('preserveMature').value);
+      let preserveRate   = clamp(num($('preserveRate').value || 25),0,100); $('preserveRate').value = preserveRate;
+      const preserveSpread = clamp(num($('preserveSpread').value || 6),3,24); $('preserveSpread').value = preserveSpread;
+      const preserveAdj = (preserveMature * (preserveRate/100)) / (preserveSpread || 1); $('preserveAdj').value = r1(preserveAdj);
+
+      // 권장 전환률 갱신
+      suggestRate(mustSum, cashAssets);
+
+      // 합계/최종
+      const bsAdj = cashAdj + preserveAdj;
+      $('bsAdj').value = r1(bsAdj);
+      const final = flow + bsAdj; $('finalF2S').value = r1(final);
+
+      // 메시지
+      $('msg1').textContent = '입력값을 바꾸면 F2S-흐름이 실시간으로 다시 계산됩니다.';
+      const tips = [];
+      if (excess<=0) tips.push('현금성 자산이 비상자금 목표에 미달하여 현금성 보정 가산이 없습니다.');
+      if (preserveMature>0 && preserveRate>0) tips.push('보존성 만기금 일부를 기간에 나눠 반영 중입니다.');
+      $('msg2').textContent = tips.join(' ') || '자산 구조 보정이 적용되었습니다.';
+      $('message').textContent = '최종 결과는 정보 제공 목적입니다. 개인 상황에 따라 다를 수 있습니다.';
+    }
+
+    // 저장/불러오기/초기화
+    function saveLocal(){
+      const data={};
+      [...INPUT_IDS, ...ADVISOR_IDS, ...RESULT_IDS].forEach(id=>{
+        const el=$(id); if(!el) return;
+        data[id] = (el.type==='checkbox') ? el.checked : el.value;
       });
-    })();
+      localStorage.setItem('dmp_f2s_integrated', JSON.stringify(data));
+      alert('이 브라우저에 저장했습니다.');
+    }
+    function loadLocal(){
+      const raw = localStorage.getItem('dmp_f2s_integrated');
+      if(!raw){ alert('저장된 데이터가 없습니다.'); return; }
+      const data = JSON.parse(raw);
+      Object.keys(data).forEach(id=>{
+        const el=$(id); if(!el) return;
+        if(el.type==='checkbox') el.checked = !!data[id];
+        else el.value = data[id];
+      });
+      calc(); alert('불러오기 완료.');
+    }
+    function resetAll(){
+      if(!confirm('모든 값을 초기화할까요?')) return;
+      localStorage.removeItem('dmp_f2s_integrated');
+      // 기본값 재주입
+      Object.entries(DEFAULTS).forEach(([id,val])=>{
+        const el=$(id); if(!el) return;
+        if(el.type==='checkbox') el.checked = !!val;
+        else el.value = val;
+      });
+      calc();
+    }
+
+    // TSV(UTF-16LE+BOM) — 엑셀 한글깨짐 방지
+    function toUTF16LEWithBOM(str){
+      const bom=new Uint8Array([0xFF,0xFE]);
+      const buf=new Uint8Array(str.length*2);
+      for(let i=0;i<str.length;i++){ const c=str.charCodeAt(i); buf[i*2]=c&0xFF; buf[i*2+1]=(c>>8)&0xFF; }
+      const out=new Uint8Array(bom.length+buf.length); out.set(bom,0); out.set(buf,bom.length); return out;
+    }
+    function exportTSV(){
+      const rows=[
+        ['항목','값(만원/단위)'],
+        // 1단계
+        ['세후 소득', $('income').value],
+        ['필수 합계', $('mustSum').value],
+        ['안전망 합계', $('safetySum').value],
+        ['F2S-흐름', $('flowF2S').value],
+        // 2단계
+        ['현금성 자산 총액', $('cashAssets').value],
+        ['비상자금 목표(개월)', $('emMonths').value],
+        ['적정 비상자금', $('needEmergency').value],
+        ['초과 현금성', $('excessCash').value],
+        ['현금성 보정(월)', $('cashAdj').value],
+        ['보존성 만기(6개월내)', $('preserveMature').value],
+        ['전환 반영률(%)', $('preserveRate').value],
+        ['전환 분할기간(개월)', $('preserveSpread').value],
+        ['보존성 보정(월)', $('preserveAdj').value],
+        ['권장 전환률(%)', $('suggestedRate').value],
+        ['BS-보정 합계(월)', $('bsAdj').value],
+        // 최종
+        ['최종 F2S(월)', $('finalF2S').value],
+      ];
+      const tsv = rows.map(r=>r.join('\t')).join('\r\n');
+      const blob = new Blob([toUTF16LEWithBOM(tsv)],{type:'text/tab-separated-values;charset=utf-16le;'});
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='dmp_f2s_worksheet.tsv'; a.click(); URL.revokeObjectURL(a.href);
+    }
+
+    // 이벤트 연결
+    function wire(){
+      [...INPUT_IDS].forEach(id=>$(id)?.addEventListener('input', calc));
+      [...ADVISOR_IDS].forEach(id=>$(id)?.addEventListener('input', calc));
+      $('applySuggested')?.addEventListener('click', ()=>{ $('preserveRate').value = $('suggestedRate').value; calc(); });
+      $('save')?.addEventListener('click', saveLocal);
+      $('load')?.addEventListener('click', loadLocal);
+      $('reset')?.addEventListener('click', resetAll);
+      $('exportCsv')?.addEventListener('click', exportTSV);
+    }
+
+    window.addEventListener('DOMContentLoaded', ()=>{
+      // 기본값 주입
+      Object.entries(DEFAULTS).forEach(([id,val])=>{
+        const el=$(id); if(!el) return;
+        if(el.type==='checkbox') el.checked = !!val; else el.value = val;
+      });
+      wire();
+      calc(); // 첫 계산
+    });
   </script>
 </body>
 </html>
