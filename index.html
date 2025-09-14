@@ -36,20 +36,20 @@
     }
 
     /* 한 줄: [라벨 | 입력 | 단위]  → 값 블록을 '칸의 우측'에 붙임 */
-.row{
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;   /* ← 값 블록을 칸의 우측으로 붙임 */
-  gap:6px;                    /* 라벨↔입력, 입력↔단위 간격 */
-  margin:8px 0;
-  width:100%;
-}
-.row > label{
-  color:#c9d4ff; font-size:14px;
-  text-align:right;           /* 라벨 우측 정렬 → 입력 직전까지 붙음 */
-  white-space:nowrap;         /* 줄바꿈 방지 */
-  margin-right:6px;           /* 라벨과 입력 간 살짝 간격 */
-}
+    .row{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;   /* ← 값 블록을 칸의 우측으로 붙임 */
+      gap:6px;                    /* 라벨↔입력, 입력↔단위 간격 */
+      margin:8px 0;
+      width:100%;
+    } 
+    .row > label{
+      color:#c9d4ff; font-size:14px;
+      text-align:right;           /* 라벨 우측 정렬 → 입력 직전까지 붙음 */
+      white-space:nowrap;         /* 줄바꿈 방지 */
+      margin-right:6px;           /* 라벨과 입력 간 살짝 간격 */
+    }
 
     /* 숫자 입력/결과 */
     input[type="number"], input[readonly], input.result{
@@ -77,7 +77,7 @@
     }
 
     /* 단위 텍스트 */
-.k{ margin-left:4px; white-space:nowrap; opacity:.95; } /* 단위는 입력 바로 옆 */
+    .k{ margin-left:4px; white-space:nowrap; opacity:.95; } /* 단위는 입력 바로 옆 */
     
     /* 결과 라인(긴 라벨) */
     input.result{ width:120px; }
