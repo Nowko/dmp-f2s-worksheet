@@ -327,72 +327,72 @@
 
     // 메인 계산
     function calc() {
-      const income = num($('income').value);
-
-      const mustSum = num($('rent').value) + num($('transport').value) + num($('food').value) + num($('telIns').value) + num($('others').value);
+      const g = (id, def = 0) => num(($(id)?.value) ?? def); // 안전 게터
+      
+  // 1단계
+      const income   = g('income');
+      const mustSum  = g('rent') + g('transport') + g('food') + g('telIns') + g('others');
       $('mustSum').value = round1(mustSum);
 
-      const safetySum = num($('emFund').value) + num($('debtPay').value) + num($('futureSav').value);
+      const safetySum = g('emFund') + g('debtPay') + g('futureSav')0;
       $('safetySum').value = round1(safetySum);
 
       const flowF2S = income - (mustSum + safetySum);
       $('flowF2S').value = round1(flowF2S);
 
-      // 현금성 보정
-      const cashAssets = num($('cashAssets').value);
-      const emMonths = clamp(num($('emMonths').value), 3, 12);
+  // 2단계: 현금성
+      const cashAssets   = g('cashAssets');
+      const emMonths     = clamp(g('emMonths', 6), 3, 12);
       $('emMonths').value = emMonths;
 
       const needEmergency = mustSum * emMonths;
       $('needEmergency').value = round1(needEmergency);
-
+      
       const excess = Math.max(0, cashAssets - needEmergency);
       $('excessCash').value = round1(excess);
-
-      const cashRate = clamp(num($('cashRate').value), 0, 100);
+      
+      const cashRate     = clamp(g('cashRate', 50), 0, 100);
       $('cashRate').value = cashRate;
-      const spreadMonths = clamp(num($('spreadMonths').value), 6, 24);
+      const spreadMonths = clamp(g('spreadMonths', 12), 6, 24);
       $('spreadMonths').value = spreadMonths;
 
-      const cashAdj = (excess * (cashRate / 100)) / (spreadMonths || 1);
+      const cashAdj = (excess * (cashRate/100)) / (spreadMonths || 1);
       $('cashAdj').value = round1(cashAdj);
 
-      // 보존성 보정
-      const preserveMature = num($('preserveMature').value);
-      const preserveRate = clamp(num($('preserveRate').value), 0, 100);
-      $('preserveRate').value = preserveRate;
-      const preserveSpread = clamp(num($('preserveSpread').value), 3, 24);
+      // 2단계: 보존성
+      const preserveMature = g('preserveMature');
+      const preserveRate   = clamp(g('preserveRate', 25), 0, 100);
+      reserveRate').value = preserveRate;
+      const preserveSpread  = clamp(g('preserveSpread', 6), 3, 24);
       $('preserveSpread').value = preserveSpread;
 
-      const preserveAdj = (preserveMature * (preserveRate / 100)) / (preserveSpread || 1);
+      const preserveAdj = (preserveMature * (preserveRate/100)) / (preserveSpread || 1);
       $('preserveAdj').value = round1(preserveAdj);
 
-      // 권장 전환률 갱신
-      suggestPreserveRate(mustSum, cashAssets);
+      // 권장 전환률 갱신(있으면)
+      if (typeof suggestPreserveRate === 'function') {
+        suggestPreserveRate(mustSum, cashAssets);
+      }
 
-      // 부채 보정
-      const debtDelta = num($('debtDelta').value);
+  // 부채 보정(입력칸이 없으면 0)
+      const debtDelta = g('debtDelta', 0);
+      
       const bsAdj = cashAdj + preserveAdj - Math.max(0, debtDelta) + Math.min(0, debtDelta);
       $('bsAdj').value = round1(bsAdj);
-
-      // 최종
+      
+  // 최종
       const final = flowF2S + bsAdj;
       $('finalF2S').value = round1(final);
 
-      renderMessage({ excess, preserveMature, preserveRate, debtDelta });
-    }
-
-    function renderMessage({ excess, preserveMature, preserveRate, debtDelta }) {
-      const el = $('message');
-      if (!el) return;
-
+  // 메시지
       const msg = [];
       if (excess <= 0) msg.push('현금성 자산이 비상자금 목표에 미달하여 현금성 보정 가산이 없습니다.');
       if (preserveMature > 0 && preserveRate > 0) msg.push('보존성 만기금 일부를 기간에 나눠 반영 중입니다.');
-      if (debtDelta !== 0) msg.push(`부채 스케줄 변화로 월 ${Math.abs(debtDelta).toFixed(1)}만 원 ${debtDelta > 0 ? '추가 상환(차감)' : '감소(가산)'} 반영.`);
+      if (debtDelta !== 0) msg.push(`부채 스케줄 변화로 월 ${Math.abs(debtDelta).toFixed(1)}만 원 ${debtDelta>0?'추가 상환(차감)':'감소(가산)'} 반영.`);
       if (msg.length === 0) msg.push('계산이 완료되었습니다. 결과는 만 원 단위로 반올림 표시됩니다.');
-      el.textContent = msg.join(' ');
+      $('message')?.textContent = msg.join(' ');
     }
+
 
     // 저장/불러오기/초기화 (보조입력 포함 저장)
     function saveLocal() {
