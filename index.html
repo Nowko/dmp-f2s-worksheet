@@ -52,7 +52,12 @@
     .note{ background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13px; color:#cdd6ff; }
     .footer{ opacity:.75; font-size:12px; margin-top:8px; }
 
-    .row.longlabel{ justify-content:space-between; }
+    .row.longlabel {
+      display: grid;
+      grid-template-columns: 1fr auto auto; /* 라벨 | 결과입력 | 단위 */
+      align-items: center;
+      column-gap: 8px;
+    }
 
     @media (max-width:760px){
       .grid{ grid-template-columns:1fr; gap:10px; }
