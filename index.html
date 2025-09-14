@@ -294,34 +294,42 @@
       calc();
     });
 
-    $('exportCsv').addEventListener('click', ()=> {
-      const rows = [
-        ['항목','값(만원/또는 단위)'],
-        ['세후 소득', $('income').value],
-        ['필수 합계', $('mustSum').value],
-        ['안전망 합계', $('safetySum').value],
-        ['F2S-흐름', $('flowF2S').value],
-        ['현금성 자산', $('cashAssets').value],
-        ['비상자금 목표(개월)', $('emMonths').value],
-        ['적정 비상자금', $('needEmergency').value],
-        ['초과 현금성', $('excessCash').value],
-        ['현금성 보정(월)', $('cashAdj').value],
-        ['보존성 만기(6개월내)', $('preserveMature').value],
-        ['보존성 전환율(%)', $('preserveRate').value],
-        ['보존성 분할기간(개월)', $('preserveSpread').value],
-        ['보존성 보정(월)', $('preserveAdj').value],
-        ['부채 변화(월)', $('debtDelta').value],
-        ['BS-보정 합계(월)', $('bsAdj').value],
-        ['최종 F2S(월)', $('finalF2S').value],
-      ];
-      const csv = rows.map(r => r.map(x => `"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
-      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'dmp_f2s_worksheet.csv';
-      a.click();
-      URL.revokeObjectURL(a.href);
-    });
+  $('exportCsv').addEventListener('click', () => {
+    const rows = [
+      ['항목','값(만원/또는 단위)'],
+      ['세후 소득', $('income').value],
+      ['필수 합계', $('mustSum').value],
+      ['안전망 합계', $('safetySum').value],
+      ['F2S-흐름', $('flowF2S').value],
+      ['현금성 자산', $('cashAssets').value],
+      ['비상자금 목표(개월)', $('emMonths').value],
+      ['적정 비상자금', $('needEmergency').value],
+      ['초과 현금성', $('excessCash').value],
+      ['현금성 보정(월)', $('cashAdj').value],
+      ['보존성 만기(6개월내)', $('preserveMature').value],
+      ['보존성 전환율(%)', $('preserveRate').value],
+      ['보존성 분할기간(개월)', $('preserveSpread').value],
+      ['보존성 보정(월)', $('preserveAdj').value],
+      ['부채 변화(월)', $('debtDelta').value],
+      ['BS-보정 합계(월)', $('bsAdj').value],
+      ['최종 F2S(월)', $('finalF2S').value],
+    ];
+
+    // CSV 문자열 (윈도우 엑셀 호환을 위한 CRLF 줄바꿈)
+    const csv = rows
+      .map(r => r.map(x => `"${String(x).replace(/"/g,'""')}"`).join(','))
+      .join('\r\n');
+
+    // ★ 핵심: UTF-8 BOM 추가
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'dmp_f2s_worksheet.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
   </script>
 </body>
 </html>
