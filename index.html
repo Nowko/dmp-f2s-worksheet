@@ -27,27 +27,31 @@
     box-shadow:0 8px 24px rgba(0,0,0,.25);
   }
 
-  /* ▶ 섹션 내부 2열: 열 간 거리(파란 간격) 크게 */
+  /* ▶ 두 열 컨테이너: 파란 간격(열 간격) 크게 */
   .grid{
     display:grid;
     grid-template-columns:1fr 1fr;
-    column-gap:56px;                 /* 왼쪽 단위 ↔ 오른쪽 라벨 간격 넓힘 */
+    column-gap:clamp(48px, 6vw, 72px);   /* ← 오른쪽 라벨과 왼쪽 단위 사이를 넓힘 */
     row-gap:12px;
   }
 
-  /* ▶ 한 행 = 라벨 | 인풋 | 단위 : 라벨–인풋–단위(빨간 간격) 촘촘 */
+  /* ▶ 한 행 = 라벨 | 입력 | 단위 : 빨간 간격(라벨–입력–단위) 매우 좁게 */
   .row{
     display:grid;
-    grid-template-columns:minmax(140px,1fr) auto auto; /* label | input | unit */
+    grid-template-columns:170px auto auto; /* label | input | unit */
     align-items:center;
-    column-gap:4px;                  /* 라벨↔인풋↔단위 간격 매우 좁게 */
+    column-gap:4px;                        /* ← 빨간 간격 */
     margin:8px 0;
   }
 
-  label{ color:#c9d4ff; font-size:14px; }
+  /* 라벨은 오른쪽 정렬로 인풋 바로 앞에 붙임(시각상 간격 축소) */
+  label{
+    color:#c9d4ff; font-size:14px;
+    text-align:right; padding-right:2px;
+  }
 
   input[type="number"]{
-    width:145px;
+    width:150px;
     padding:8px 10px;
     border-radius:10px;
     border:1px solid var(--border);
@@ -57,12 +61,12 @@
   }
   input::placeholder{ color:#93a3ff; opacity:.6; }
 
-  /* 단위: 입력 바로 옆에 밀착, 다음 열과는 .grid column-gap으로 분리 */
+  /* 단위: 인풋에 바짝, 다음 열과는 .grid column-gap으로 분리 */
   .k{
     width:auto; min-width:max-content;
     text-align:left;
-    margin-left:2px;                 /* 입력칸과 살짝만 띄움 */
-    white-space:nowrap;              /* 줄바꿈 방지 (만원/월) */
+    margin-left:2px;                         /* 입력↔단위 아주 살짝만 띄움 */
+    white-space:nowrap;                      /* '만원/월' 줄바꿈 방지 */
     opacity:.95;
   }
 
@@ -104,16 +108,14 @@
   }
 
   /* ===== Responsive ===== */
-  @media (min-width:1180px){
-    .grid{ column-gap:64px; }        /* 넓은 화면에서는 열 간 더 넓게 */
-  }
   @media (max-width:760px){
     .grid{ grid-template-columns:1fr; column-gap:0; row-gap:10px; }
-    .row{ column-gap:6px; }
+    .row{ grid-template-columns:1fr auto auto; column-gap:6px; }
     input[type="number"]{ width:120px; }
     .k{ margin-left:2px; }
   }
 </style>
+
 
 
 
