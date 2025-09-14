@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>DMP — 욕망 해소 자금 산출 워크시트</title>
 <style>
-  /* === Theme === */
   :root{
     --bg:#0b1020; --card:#131a33; --muted:#9fb0ff; --text:#e9edff;
     --accent:#7ea7ff; --danger:#ff7e7e; --ok:#7effb6; --border:rgba(255,255,255,.10);
@@ -13,72 +12,92 @@
   *{ box-sizing:border-box; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',Arial,sans-serif; }
   body{ margin:0; background:linear-gradient(180deg,#0b1020,#0b1020 50%,#0f1530); color:var(--text); }
 
-  /* === Cards === */
   .wrap{ max-width:980px; margin:40px auto; padding:0 16px; }
   .title{ font-size:28px; font-weight:800; letter-spacing:-.3px; margin-bottom:4px; }
   .subtitle{ color:var(--muted); margin-bottom:24px; }
-  .card{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; margin-bottom:18px; box-shadow:0 8px 24px rgba(0,0,0,.25); }
 
-  /* 좌/우 두 열 사이 간격(A,B,C 전반 축소) */
+  .card{
+    background:var(--card); border:1px solid var(--border);
+    border-radius:16px; padding:20px; margin-bottom:18px;
+    box-shadow:0 8px 24px rgba(0,0,0,.25);
+  }
+
+  /* 좌/우 두 열 컨테이너(칸) */
   .grid{
     display:grid;
     grid-template-columns:1fr 1fr;
-    column-gap:24px;              /* ← 전보다 좁게 */
+    column-gap:24px;              /* 칸 사이 간격(필요 시 20~28px 조절) */
     row-gap:12px;
   }
 
-  /* 한 행 = 라벨 | 입력 | 단위  → 내부 간격 최소 & 단위 밀착(보라 해결) */
+  /* 한 줄: 라벨 | 입력 | 단위  → 값(입력+단위)을 칸의 우측으로 밀착 */
   .row{
-    display:grid;
-    grid-template-columns:max-content max-content max-content;
+    display:flex;                 /* ← grid → flex 로 변경 */
     align-items:center;
-    column-gap:2px;               /* 라벨–입력–단위 간격 최소 */
+    gap:2px;                      /* 라벨↔입력, 입력↔단위 간격 최소 */
     margin:8px 0;
-    justify-items:start;
   }
-  label{ color:#c9d4ff; font-size:14px; text-align:right; padding-right:1px; white-space:nowrap; }
+  .row > label{
+    flex:1 1 auto;                /* 라벨이 남는 공간을 먹어 값 블록을 오른쪽으로 밀어냄 */
+    color:#c9d4ff; font-size:14px;
+    text-align:left;              /* 라벨은 좌측 정렬 */
+    white-space:nowrap;
+  }
 
-  /* 숫자 오른쪽 정렬 + 폭 더 줄이기(간격 체감 ↓) */
+  /* 숫자는 모두 우측 정렬 */
   input[type="number"], input[readonly], input.result{
-    width:110px;                  /* ★ 기본 폭을 과감히 축소 */
+    width:110px;                  /* 값 폭(필요 시 100~130px) */
     padding:7px 10px;
-    text-align:right;             /* ★ 숫자 우측 정렬 */
-    font-variant-numeric: tabular-nums; /* 자리폭 일정 */
+    text-align:right;             /* ★ 오른쪽 정렬 */
+    font-variant-numeric: tabular-nums;
     border-radius:10px; border:1px solid var(--border);
     background:rgba(255,255,255,.05); color:var(--text); outline:none;
   }
   input::placeholder{ color:#93a3ff; opacity:.6; }
 
-  /* 단위는 입력 바로 옆에 ‘딱’ 붙이기 */
+  /* 단위는 입력 바로 옆에 붙이기 */
   .k{
-    width:auto; min-width:max-content;
-    margin-left:0 !important;     /* 보라색 간격 0 */
-    text-align:left; white-space:nowrap; opacity:.95;
-    justify-self:start;
+    margin-left:0;                /* 보라색 간격 0 */
+    white-space:nowrap;
+    opacity:.95;
   }
 
-  /* 합계/결과 같은 긴 라벨 행: 라벨 넓게, 입력/단위는 내용폭 */
-  .row:has(> label.result){ grid-template-columns:1fr max-content max-content; column-gap:2px; }
-  input.result{ width:120px; }    /* 결과 입력칸은 약간만 넓게(라벨 줄바꿈 방지) */
+  /* 긴 라벨(합계/결과)은 라벨 넓게, 값은 내용폭만 */
+  .row:has(> label.result){
+    gap:2px;
+  }
+  input.result{ width:120px; }    /* 결과칸 폭 */
 
+  .section-title{ font-weight:800; margin-bottom:8px; font-size:18px; }
+  .pill{
+    display:inline-block; padding:4px 10px; border-radius:999px;
+    background:rgba(126,167,255,.12); color:var(--accent);
+    font-weight:700; font-size:12px; margin-left:8px;
+  }
   .result{ font-size:20px; font-weight:800; }
+  .result.ok{ color:var(--ok); }
+  .result.warn{ color:var(--danger); }
   .hint{ color:#92a1ff; font-size:12px; }
   .muted{ color:#b7c4ff; opacity:.8; font-size:14px; }
-  .section-title{ font-weight:800; margin-bottom:8px; font-size:18px; }
-  .pill{ display:inline-block; padding:4px 10px; border-radius:999px; background:rgba(126,167,255,.12); color:var(--accent); font-weight:700; font-size:12px; margin-left:8px; }
 
   .btns{ display:flex; gap:10px; flex-wrap:wrap; }
-  button{ background:linear-gradient(180deg,#2a3a7d,#24336b); border:1px solid var(--border); color:var(--text); padding:10px 14px; border-radius:12px; cursor:pointer; }
+  button{
+    background:linear-gradient(180deg,#2a3a7d,#24336b);
+    border:1px solid var(--border); color:var(--text);
+    padding:10px 14px; border-radius:12px; cursor:pointer;
+  }
   button.secondary{ background:rgba(255,255,255,.05); }
   button.danger{ background:linear-gradient(180deg,#7d2a2a,#6b2424); }
+
   .footer{ opacity:.75; font-size:12px; margin-top:8px; }
   .hr{ border-top:1px dashed rgba(255,255,255,.15); margin:14px 0; }
-  .note{ background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13px; color:#cdd6ff; }
+  .note{
+    background:rgba(255,255,255,.04); border:1px solid var(--border);
+    border-radius:12px; padding:10px 12px; font-size:13px; color:#cdd6ff;
+  }
 
-  /* 반응형 */
   @media (max-width:760px){
     .grid{ grid-template-columns:1fr; column-gap:0; row-gap:10px; }
-    .row{ column-gap:2px; }
     input[type="number"], input[readonly]{ width:100px; }
     input.result{ width:110px; }
   }
