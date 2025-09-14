@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>DMP — 욕망 해소 자금 산출 워크시트</title>
 <style>
-  /* Theme */
+  /* ===== Theme ===== */
   :root{
     --bg:#0b1020; --card:#131a33; --muted:#9fb0ff; --text:#e9edff;
     --accent:#7ea7ff; --danger:#ff7e7e; --ok:#7effb6; --border:rgba(255,255,255,.10);
@@ -13,47 +13,56 @@
   *{ box-sizing:border-box; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',Arial,sans-serif; }
   body{ margin:0; background:linear-gradient(180deg,#0b1020,#0b1020 50%,#0f1530); color:var(--text); }
 
-  /* Wrapper & cards */
+  /* ===== Layout ===== */
   .wrap{ max-width:980px; margin:40px auto; padding:0 16px; }
   .title{ font-size:28px; font-weight:800; letter-spacing:-.3px; margin-bottom:4px; }
   .subtitle{ color:var(--muted); margin-bottom:24px; }
+
   .card{
-    background:var(--card); border:1px solid var(--border);
-    border-radius:16px; padding:20px; margin-bottom:18px;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:20px;
+    margin-bottom:18px;
     box-shadow:0 8px 24px rgba(0,0,0,.25);
   }
 
-  /* ▶ 섹션 내부 두 열: 열 사이 간격을 크게 (만원 ↔ 다음 라벨이 붙지 않도록) */
+  /* ▶ 섹션 내부 2열: 열 간 거리(파란 간격) 크게 */
   .grid{
     display:grid;
     grid-template-columns:1fr 1fr;
-    column-gap:32px;           /* 기존보다 넓힘 */
+    column-gap:56px;                 /* 왼쪽 단위 ↔ 오른쪽 라벨 간격 넓힘 */
     row-gap:12px;
   }
 
-  /* ▶ 각 행을 3칸 그리드(라벨 | 입력 | 단위)로: 라벨-입력 간격 촘촘 */
+  /* ▶ 한 행 = 라벨 | 인풋 | 단위 : 라벨–인풋–단위(빨간 간격) 촘촘 */
   .row{
     display:grid;
-    grid-template-columns:minmax(120px,1fr) auto auto; /* label | input | unit */
+    grid-template-columns:minmax(140px,1fr) auto auto; /* label | input | unit */
     align-items:center;
-    column-gap:6px;            /* 라벨↔입력 간격 축소 */
+    column-gap:4px;                  /* 라벨↔인풋↔단위 간격 매우 좁게 */
     margin:8px 0;
   }
 
   label{ color:#c9d4ff; font-size:14px; }
+
   input[type="number"]{
-    width:150px; padding:8px 10px;
-    border-radius:10px; border:1px solid var(--border);
-    background:rgba(255,255,255,.05); color:var(--text); outline:none;
+    width:145px;
+    padding:8px 10px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:rgba(255,255,255,.05);
+    color:var(--text);
+    outline:none;
   }
   input::placeholder{ color:#93a3ff; opacity:.6; }
 
-  /* ▶ 단위: 입력칸과는 가깝게, 다음 열과는 grid gap으로 분리 */
+  /* 단위: 입력 바로 옆에 밀착, 다음 열과는 .grid column-gap으로 분리 */
   .k{
     width:auto; min-width:max-content;
     text-align:left;
-    margin-left:4px;           /* 입력↔단위 약간의 여백 */
-    white-space:nowrap;        /* '만원/월' 줄바꿈 방지 */
+    margin-left:2px;                 /* 입력칸과 살짝만 띄움 */
+    white-space:nowrap;              /* 줄바꿈 방지 (만원/월) */
     opacity:.95;
   }
 
@@ -73,8 +82,11 @@
   .btns{ display:flex; gap:10px; flex-wrap:wrap; }
   button{
     background:linear-gradient(180deg,#2a3a7d,#24336b);
-    border:1px solid var(--border); color:var(--text);
-    padding:10px 14px; border-radius:12px; cursor:pointer;
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:10px 14px;
+    border-radius:12px;
+    cursor:pointer;
   }
   button.secondary{ background:rgba(255,255,255,.05); }
   button.danger{ background:linear-gradient(180deg,#7d2a2a,#6b2424); }
@@ -83,11 +95,18 @@
   .footer{ opacity:.75; font-size:12px; margin-top:8px; }
   .hr{ border-top:1px dashed rgba(255,255,255,.15); margin:14px 0; }
   .note{
-    background:rgba(255,255,255,.04); border:1px solid var(--border);
-    border-radius:12px; padding:10px 12px; font-size:13px; color:#cdd6ff;
+    background:rgba(255,255,255,.04);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:10px 12px;
+    font-size:13px;
+    color:#cdd6ff;
   }
 
-  /* Mobile */
+  /* ===== Responsive ===== */
+  @media (min-width:1180px){
+    .grid{ column-gap:64px; }        /* 넓은 화면에서는 열 간 더 넓게 */
+  }
   @media (max-width:760px){
     .grid{ grid-template-columns:1fr; column-gap:0; row-gap:10px; }
     .row{ column-gap:6px; }
@@ -95,6 +114,7 @@
     .k{ margin-left:2px; }
   }
 </style>
+
 
 
 </head>
